@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { User } from '@/lib/types';
+import { getAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -20,14 +22,20 @@ const roleBadgeStyles: Record<string, string> = {
 };
 
 export default function UsersPage() {
+  const router = useRouter();
+  const { user: currentUser } = getAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   useEffect(() => {
+    if (currentUser?.role !== 'ADMIN') {
+      router.push('/dashboard');
+      return;
+    }
     fetchUsers();
-  }, []);
+  }, [currentUser, router]);
 
   const fetchUsers = async () => {
     try {
@@ -76,8 +84,8 @@ export default function UsersPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
       <Navbar />
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
+      <div className="max-w-7xl mx-auto px-4 py-8 page-enter">
+        <div className="mb-8 animate-fade-in-up">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent">
             User Management
           </h1>
@@ -85,8 +93,8 @@ export default function UsersPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card className="shadow-md">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 stagger-children">
+          <Card className="shadow-md card-hover">
             <CardContent className="pt-6 pb-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -100,7 +108,7 @@ export default function UsersPage() {
             </CardContent>
           </Card>
           {(['ADMIN', 'ENGINEER', 'VIEWER'] as const).map((role) => (
-            <Card key={role} className="shadow-md">
+            <Card key={role} className="shadow-md card-hover">
               <CardContent className="pt-6 pb-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -117,7 +125,7 @@ export default function UsersPage() {
         </div>
 
         {/* Users Table */}
-        <Card className="shadow-lg">
+        <Card className="shadow-lg animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           <CardHeader>
             <CardTitle className="text-xl">All Users</CardTitle>
             <CardDescription>View and manage all registered users</CardDescription>
@@ -127,7 +135,7 @@ export default function UsersPage() {
               <SkeletonTable />
             ) : users.length === 0 ? (
               <div className="text-center py-12">
-                <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-30" />
                 <h3 className="text-lg font-semibold mb-1">No users found</h3>
                 <p className="text-muted-foreground">No users have been registered yet</p>
               </div>
@@ -137,44 +145,35 @@ export default function UsersPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[40%]">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4" />
-                          Email
-                        </div>
+                        <div className="flex items-center gap-2"><Mail className="h-4 w-4" /> Email</div>
                       </TableHead>
                       <TableHead>
-                        <div className="flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          Role
-                        </div>
+                        <div className="flex items-center gap-2"><Shield className="h-4 w-4" /> Role</div>
                       </TableHead>
                       <TableHead>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          Joined
-                        </div>
+                        <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Joined</div>
                       </TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((user) => (
-                      <TableRow key={user.id} className="group">
+                    {users.map((u) => (
+                      <TableRow key={u.id} className="group hover:bg-muted/50 transition-colors">
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                              {user.email.charAt(0).toUpperCase()}
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-md">
+                              {u.email.charAt(0).toUpperCase()}
                             </div>
-                            <span className="font-medium">{user.email}</span>
+                            <span className="font-medium">{u.email}</span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <select
-                            value={user.role}
-                            onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                            value={u.role}
+                            onChange={(e) => handleRoleChange(u.id, e.target.value)}
                             className={cn(
-                              'px-3 py-1.5 rounded-lg border text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors',
-                              roleBadgeStyles[user.role]
+                              'px-3 py-1.5 rounded-lg border text-xs font-bold uppercase tracking-wider cursor-pointer transition-all hover:scale-105',
+                              roleBadgeStyles[u.role]
                             )}
                           >
                             <option value="VIEWER">Viewer</option>
@@ -184,15 +183,15 @@ export default function UsersPage() {
                         </TableCell>
                         <TableCell>
                           <span className="text-sm text-muted-foreground">
-                            {new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                            {new Date(u.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleDeleteClick(user)}
-                            className="gap-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleDeleteClick(u)}
+                            className="gap-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                           >
                             <Trash2 className="h-4 w-4" />
                             Delete

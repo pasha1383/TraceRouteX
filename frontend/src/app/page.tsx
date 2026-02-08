@@ -29,7 +29,7 @@ const features = [
   {
     icon: Server,
     title: 'Service Monitoring',
-    description: 'Monitor service health with real-time status indicators: Operational, Degraded, Down, or Maintenance.',
+    description: 'Monitor service health with real-time status indicators: Up, Degraded, or Down.',
     color: 'from-blue-500 to-cyan-500',
     bgColor: 'bg-blue-50 dark:bg-blue-950/30',
   },
@@ -74,10 +74,10 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
       {/* Nav */}
-      <nav className="border-b bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl sticky top-0 z-50">
+      <nav className="border-b glass sticky top-0 z-50 animate-fade-in-down">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+          <div className="flex items-center gap-2.5 group">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:shadow-blue-500/40 transition-all duration-300 group-hover:scale-110">
               <span className="text-white font-bold text-sm">TX</span>
             </div>
             <span className="text-lg font-bold">TraceRouteX</span>
@@ -88,7 +88,7 @@ export default function Home() {
             </Link>
             {isAuth ? (
               <Link href="/dashboard">
-                <Button size="sm" className="gap-2">
+                <Button size="sm" className="gap-2 shadow-lg shadow-blue-500/20">
                   Dashboard <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
@@ -98,7 +98,7 @@ export default function Home() {
                   <Button variant="outline" size="sm">Sign In</Button>
                 </Link>
                 <Link href="/register">
-                  <Button size="sm">Get Started</Button>
+                  <Button size="sm" className="shadow-lg shadow-blue-500/20">Get Started</Button>
                 </Link>
               </>
             )}
@@ -109,70 +109,61 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50/50 to-white dark:from-blue-950/20 dark:via-purple-950/10 dark:to-gray-950" />
-        <div className="absolute top-20 left-1/4 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl" />
+        <div className="absolute top-20 left-1/4 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1.5s' }} />
+        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-pink-400/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '0.8s' }} />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-28">
           <div className="text-center space-y-8 max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-sm font-medium">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-sm font-medium animate-fade-in-down">
               <Zap className="h-4 w-4" />
               Real-time incident management platform
             </div>
 
-            <h1 className="text-5xl sm:text-7xl font-bold leading-tight">
+            <h1 className="text-5xl sm:text-7xl font-bold leading-tight animate-fade-in-up">
               <span className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-600 dark:from-white dark:via-gray-200 dark:to-gray-400 bg-clip-text text-transparent">
                 Monitor. Manage.
               </span>
               <br />
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-gradient animate-gradient-shift bg-[length:200%_200%]" style={{ WebkitTextFillColor: 'transparent', backgroundImage: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%)' }}>
                 Stay Informed.
               </span>
             </h1>
 
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
               Track your services, manage incidents in real-time, and keep your entire team aligned
               with a beautiful, intuitive status dashboard.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
               {isAuth ? (
-                <Button size="lg" onClick={() => router.push('/dashboard')} className="gap-2 h-12 px-8 text-base">
+                <Button size="lg" onClick={() => router.push('/dashboard')} className="gap-2 h-12 px-8 text-base shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all hover:scale-105">
                   Go to Dashboard <ArrowRight className="h-5 w-5" />
                 </Button>
               ) : (
                 <>
-                  <Button size="lg" onClick={() => router.push('/register')} className="gap-2 h-12 px-8 text-base shadow-lg shadow-blue-500/25">
+                  <Button size="lg" onClick={() => router.push('/register')} className="gap-2 h-12 px-8 text-base shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all hover:scale-105">
                     Get Started Free <ArrowRight className="h-5 w-5" />
                   </Button>
-                  <Button size="lg" variant="outline" onClick={() => router.push('/login')} className="h-12 px-8 text-base">
+                  <Button size="lg" variant="outline" onClick={() => router.push('/login')} className="h-12 px-8 text-base hover:scale-105 transition-transform">
                     Sign In
                   </Button>
                 </>
               )}
-              <Button size="lg" variant="secondary" onClick={() => router.push('/public/status')} className="gap-2 h-12 px-8 text-base">
+              <Button size="lg" variant="secondary" onClick={() => router.push('/public/status')} className="gap-2 h-12 px-8 text-base hover:scale-105 transition-transform">
                 <Globe className="h-5 w-5" />
                 Live Status
               </Button>
             </div>
 
             {/* Trust indicators */}
-            <div className="flex flex-wrap justify-center gap-8 pt-8 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                Free to use
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                Role-based access
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                Real-time updates
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                Audit logging
-              </div>
+            <div className="flex flex-wrap justify-center gap-8 pt-8 text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: '0.5s' }}>
+              {['Free to use', 'Role-based access', 'Real-time updates', 'Audit logging'].map((item) => (
+                <div key={item} className="flex items-center gap-2 hover:text-foreground transition-colors">
+                  <CheckCircle className="h-4 w-4 text-emerald-500" />
+                  {item}
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -192,19 +183,20 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 stagger-children">
             {features.map((feature) => {
               const Icon = feature.icon;
               return (
                 <div
                   key={feature.title}
-                  className="group relative bg-white dark:bg-gray-900 rounded-2xl border p-8 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                  className="group relative bg-white dark:bg-gray-900 rounded-2xl border p-8 card-hover"
                 >
-                  <div className={`inline-flex p-3 rounded-xl ${feature.bgColor} mb-5`}>
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <div className={`inline-flex p-3 rounded-xl ${feature.bgColor} mb-5 group-hover:scale-110 transition-transform duration-300`}>
                     <Icon className="h-6 w-6" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+                  <h3 className="text-xl font-semibold mb-3 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">{feature.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed relative">{feature.description}</p>
                 </div>
               );
             })}
@@ -213,23 +205,26 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
+      <section className="py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20" />
+        <div className="absolute top-1/2 left-1/4 w-48 h-48 bg-blue-400/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-purple-400/10 rounded-full blur-3xl" />
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
           <h2 className="text-4xl font-bold">Ready to get started?</h2>
           <p className="text-xl text-muted-foreground">
             Set up your status page and start monitoring in minutes.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {isAuth ? (
-              <Button size="lg" onClick={() => router.push('/dashboard')} className="gap-2 h-12 px-8 text-base">
+              <Button size="lg" onClick={() => router.push('/dashboard')} className="gap-2 h-12 px-8 text-base shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all hover:scale-105">
                 Open Dashboard <ArrowRight className="h-5 w-5" />
               </Button>
             ) : (
               <>
-                <Button size="lg" onClick={() => router.push('/register')} className="gap-2 h-12 px-8 text-base shadow-lg shadow-blue-500/25">
+                <Button size="lg" onClick={() => router.push('/register')} className="gap-2 h-12 px-8 text-base shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all hover:scale-105">
                   Create Free Account <ArrowRight className="h-5 w-5" />
                 </Button>
-                <Button size="lg" variant="outline" onClick={() => router.push('/public/status')} className="gap-2 h-12 px-8 text-base">
+                <Button size="lg" variant="outline" onClick={() => router.push('/public/status')} className="gap-2 h-12 px-8 text-base hover:scale-105 transition-transform">
                   <Globe className="h-5 w-5" />
                   View Live Demo
                 </Button>
@@ -244,7 +239,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-md">
                 <span className="text-white font-bold text-xs">TX</span>
               </div>
               <span className="text-sm font-semibold">TraceRouteX</span>

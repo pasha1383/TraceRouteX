@@ -16,7 +16,8 @@ import { IncidentTimeline } from '@/components/IncidentTimeline';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { SkeletonTimeline } from '@/components/Skeleton';
 import { toast } from 'sonner';
-import { ArrowLeft, Plus, Trash2, Eye, EyeOff, CheckCircle, Edit, Save, X } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Eye, EyeOff, CheckCircle, Edit, Save, X, Server, FileText, User } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function IncidentDetailPage() {
   const params = useParams();
@@ -26,12 +27,13 @@ export default function IncidentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [updateContent, setUpdateContent] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
+  const [rootCauseSummary, setRootCauseSummary] = useState('');
   const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState({
     title: '',
     description: '',
     severity: '',
-    status: '',
     isPublic: false,
   });
 
@@ -43,7 +45,6 @@ export default function IncidentDetailPage() {
         title: response.data.title,
         description: response.data.description,
         severity: response.data.severity,
-        status: response.data.status,
         isPublic: response.data.isPublic,
       });
     } catch (error) {
@@ -67,8 +68,9 @@ export default function IncidentDetailPage() {
       toast.success('Update added successfully');
       setUpdateContent('');
       fetchIncident();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to add update');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      toast.error(err.response?.data?.error || 'Failed to add update');
     }
   };
 
@@ -78,8 +80,9 @@ export default function IncidentDetailPage() {
       toast.success('Incident updated successfully');
       setEditMode(false);
       fetchIncident();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to update incident');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      toast.error(err.response?.data?.error || 'Failed to update incident');
     }
   };
 
@@ -88,8 +91,22 @@ export default function IncidentDetailPage() {
       await incidentsAPI.delete(params.id as string);
       toast.success('Incident deleted successfully');
       router.push('/incidents');
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to delete incident');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      toast.error(err.response?.data?.error || 'Failed to delete incident');
+    }
+  };
+
+  const handleResolveConfirm = async () => {
+    try {
+      await incidentsAPI.resolve(params.id as string, rootCauseSummary || undefined);
+      toast.success('Incident resolved!');
+      setResolveDialogOpen(false);
+      setRootCauseSummary('');
+      fetchIncident();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      toast.error(err.response?.data?.error || 'Failed to resolve incident');
     }
   };
 
@@ -98,8 +115,9 @@ export default function IncidentDetailPage() {
       await incidentsAPI.publish(params.id as string, !incident?.isPublic);
       toast.success(`Incident is now ${incident?.isPublic ? 'private' : 'public'}`);
       fetchIncident();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to toggle visibility');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      toast.error(err.response?.data?.error || 'Failed to toggle visibility');
     }
   };
 
@@ -125,24 +143,37 @@ export default function IncidentDetailPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
         <Navbar />
-        <div className="max-w-5xl mx-auto px-4 py-8">
-          <p>Incident not found</p>
+        <div className="max-w-5xl mx-auto px-4 py-16 text-center animate-fade-in-up">
+          <div className="text-6xl mb-4">🔍</div>
+          <h2 className="text-2xl font-bold mb-2">Incident not found</h2>
+          <p className="text-muted-foreground mb-6">The incident you&apos;re looking for doesn&apos;t exist.</p>
+          <Button onClick={() => router.push('/incidents')}>Back to Incidents</Button>
         </div>
       </div>
     );
   }
 
+  const getSeverityBorder = () => {
+    switch (incident.severity) {
+      case 'CRITICAL': return 'border-l-red-500';
+      case 'HIGH': return 'border-l-orange-500';
+      case 'MEDIUM': return 'border-l-amber-500';
+      case 'LOW': return 'border-l-sky-500';
+      default: return 'border-l-gray-300';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <Link href="/incidents" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground mb-6 transition-colors">
+      <div className="max-w-5xl mx-auto px-4 py-8 page-enter">
+        <Link href="/incidents" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground mb-6 transition-colors animate-fade-in">
           <ArrowLeft className="h-4 w-4" />
           Back to Incidents
         </Link>
 
         {/* Incident Header */}
-        <Card className="mb-6 border-l-4 border-l-orange-500">
+        <Card className={cn('mb-6 border-l-4 shadow-lg animate-fade-in-up', getSeverityBorder())}>
           <CardHeader>
             <div className="flex items-start justify-between gap-4">
               {editMode ? (
@@ -150,74 +181,87 @@ export default function IncidentDetailPage() {
                   <Input
                     value={editData.title}
                     onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-                    className="text-2xl font-bold"
+                    className="text-2xl font-bold h-12"
                     placeholder="Incident title"
                   />
                   <textarea
                     value={editData.description}
                     onChange={(e) => setEditData({ ...editData, description: e.target.value })}
-                    className="w-full border rounded-md p-3 min-h-[100px]"
+                    className="w-full border rounded-xl p-3 min-h-[100px] bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                     placeholder="Incident description"
                   />
-                  <div className="flex gap-4">
-                    <div>
-                      <Label>Severity</Label>
-                      <select
-                        value={editData.severity}
-                        onChange={(e) => setEditData({ ...editData, severity: e.target.value })}
-                        className="w-full border rounded-md p-2 mt-1"
-                      >
-                        <option value="LOW">Low</option>
-                        <option value="MEDIUM">Medium</option>
-                        <option value="HIGH">High</option>
-                        <option value="CRITICAL">Critical</option>
-                      </select>
-                    </div>
-                    <div>
-                      <Label>Status</Label>
-                      <select
-                        value={editData.status}
-                        onChange={(e) => setEditData({ ...editData, status: e.target.value })}
-                        className="w-full border rounded-md p-2 mt-1"
-                      >
-                        <option value="OPEN">Open</option>
-                        <option value="INVESTIGATING">Investigating</option>
-                        <option value="RESOLVED">Resolved</option>
-                        <option value="CLOSED">Closed</option>
-                      </select>
-                    </div>
+                  <div>
+                    <Label>Severity</Label>
+                    <select
+                      value={editData.severity}
+                      onChange={(e) => setEditData({ ...editData, severity: e.target.value })}
+                      className="w-full border rounded-lg p-2 mt-1 bg-background cursor-pointer"
+                    >
+                      <option value="LOW">Low</option>
+                      <option value="MEDIUM">Medium</option>
+                      <option value="HIGH">High</option>
+                      <option value="CRITICAL">Critical</option>
+                    </select>
                   </div>
                 </div>
               ) : (
                 <div className="flex-1">
                   <CardTitle className="text-3xl mb-4">{incident.title}</CardTitle>
                   <div className="flex gap-2 flex-wrap mb-4">
-                    <StatusBadge status={incident.severity} />
-                    <StatusBadge status={incident.status} />
+                    <StatusBadge status={incident.severity} animated />
+                    <StatusBadge status={incident.status} animated />
                     {incident.isPublic && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border bg-violet-100 text-violet-800 border-violet-300 dark:bg-violet-900/30 dark:text-violet-400 dark:border-violet-800">
                         <Eye className="h-3 w-3" />
                         Public
                       </span>
                     )}
                   </div>
                   <p className="text-lg text-muted-foreground leading-relaxed">{incident.description}</p>
-                  
+
+                  {/* Meta info */}
+                  <div className="flex flex-wrap gap-4 mt-4 text-sm text-muted-foreground">
+                    {incident.service && (
+                      <div className="flex items-center gap-1.5">
+                        <Server className="h-4 w-4" />
+                        <span>Service: <span className="font-medium text-foreground">{incident.service.name}</span></span>
+                      </div>
+                    )}
+                    {incident.createdBy && (
+                      <div className="flex items-center gap-1.5">
+                        <User className="h-4 w-4" />
+                        <span>Created by: <span className="font-medium text-foreground">{incident.createdBy.email}</span></span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Resolved banner */}
                   {incident.resolvedAt && (
-                    <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <div className="mt-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-start gap-3 animate-fade-in">
+                      <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-green-900 dark:text-green-100">Incident Resolved</p>
-                        <p className="text-xs text-green-700 dark:text-green-300">
+                        <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">Incident Resolved</p>
+                        <p className="text-xs text-emerald-700 dark:text-emerald-300">
                           {new Date(incident.resolvedAt).toLocaleString()}
                         </p>
                       </div>
                     </div>
                   )}
+
+                  {/* Root Cause Summary */}
+                  {incident.rootCauseSummary && (
+                    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl animate-fade-in">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <span className="text-sm font-semibold text-blue-900 dark:text-blue-100">Root Cause Summary</span>
+                      </div>
+                      <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed">{incident.rootCauseSummary}</p>
+                    </div>
+                  )}
                 </div>
               )}
 
-              <div className="flex gap-2 flex-shrink-0">
+              <div className="flex gap-2 flex-shrink-0 flex-wrap justify-end">
                 {canEdit && (
                   <>
                     {editMode ? (
@@ -233,20 +277,26 @@ export default function IncidentDetailPage() {
                       </>
                     ) : (
                       <>
-                        <Button onClick={() => setEditMode(true)} variant="outline" size="sm" className="gap-2">
+                        <Button onClick={() => setEditMode(true)} variant="outline" size="sm" className="gap-2 hover:scale-105 transition-transform">
                           <Edit className="h-4 w-4" />
                           Edit
                         </Button>
-                        <Button onClick={handleTogglePublic} variant="outline" size="sm" className="gap-2">
+                        <Button onClick={handleTogglePublic} variant="outline" size="sm" className="gap-2 hover:scale-105 transition-transform">
                           {incident.isPublic ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          {incident.isPublic ? 'Make Private' : 'Make Public'}
+                          {incident.isPublic ? 'Private' : 'Public'}
                         </Button>
+                        {incident.status === 'OPEN' && (
+                          <Button onClick={() => setResolveDialogOpen(true)} size="sm" className="gap-2 bg-emerald-600 hover:bg-emerald-700 hover:scale-105 transition-all shadow-lg shadow-emerald-500/20">
+                            <CheckCircle className="h-4 w-4" />
+                            Resolve
+                          </Button>
+                        )}
                       </>
                     )}
                   </>
                 )}
                 {canDelete && !editMode && (
-                  <Button onClick={() => setDeleteDialogOpen(true)} variant="destructive" size="sm" className="gap-2">
+                  <Button onClick={() => setDeleteDialogOpen(true)} variant="destructive" size="sm" className="gap-2 hover:scale-105 transition-transform">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
@@ -257,9 +307,12 @@ export default function IncidentDetailPage() {
 
         {/* Add Update Form */}
         {canEdit && (
-          <Card className="mb-6">
+          <Card className="mb-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
             <CardHeader>
-              <CardTitle className="text-lg">Add Update</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Plus className="h-5 w-5 text-blue-500" />
+                Add Update
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleAddUpdate} className="space-y-4">
@@ -269,12 +322,12 @@ export default function IncidentDetailPage() {
                     id="update"
                     value={updateContent}
                     onChange={(e) => setUpdateContent(e.target.value)}
-                    className="w-full border rounded-md p-3 mt-1 min-h-[100px]"
+                    className="w-full border rounded-xl p-3 mt-1 min-h-[100px] bg-background focus:outline-none focus:ring-2 focus:ring-ring transition-shadow resize-y"
                     placeholder="Describe the latest developments..."
                     required
                   />
                 </div>
-                <Button type="submit" className="gap-2">
+                <Button type="submit" className="gap-2 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all">
                   <Plus className="h-4 w-4" />
                   Add Update
                 </Button>
@@ -284,7 +337,7 @@ export default function IncidentDetailPage() {
         )}
 
         {/* Timeline */}
-        <Card>
+        <Card className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           <CardHeader>
             <CardTitle className="text-lg">Incident Timeline</CardTitle>
           </CardHeader>
@@ -294,6 +347,29 @@ export default function IncidentDetailPage() {
         </Card>
       </div>
 
+      {/* Resolve Dialog */}
+      <ConfirmDialog
+        open={resolveDialogOpen}
+        onOpenChange={setResolveDialogOpen}
+        onConfirm={handleResolveConfirm}
+        title="Resolve Incident"
+        description="Mark this incident as resolved. You can optionally add a root cause summary for post-mortem analysis."
+        confirmText="Resolve"
+        cancelText="Cancel"
+      >
+        <div className="mt-4 space-y-2">
+          <Label htmlFor="rootCause" className="text-sm font-semibold">Root Cause Summary (optional)</Label>
+          <textarea
+            id="rootCause"
+            value={rootCauseSummary}
+            onChange={(e) => setRootCauseSummary(e.target.value)}
+            className="w-full border rounded-xl p-3 min-h-[100px] bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-y"
+            placeholder="What was the root cause? What steps were taken to resolve it?"
+          />
+        </div>
+      </ConfirmDialog>
+
+      {/* Delete Dialog */}
       <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}

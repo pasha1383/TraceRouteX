@@ -6,17 +6,17 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { Service } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
-import { ArrowLeft, AlertTriangle, Eye, EyeOff, Send } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Eye, EyeOff, Send, Server } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const severityOptions = [
-  { value: 'LOW', label: 'Low', description: 'Minor issue, no user impact', color: 'border-blue-300 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400' },
-  { value: 'MEDIUM', label: 'Medium', description: 'Moderate issue, limited impact', color: 'border-yellow-300 bg-yellow-50 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-400' },
+  { value: 'LOW', label: 'Low', description: 'Minor issue, no user impact', color: 'border-sky-300 bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400' },
+  { value: 'MEDIUM', label: 'Medium', description: 'Moderate issue, limited impact', color: 'border-amber-300 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400' },
   { value: 'HIGH', label: 'High', description: 'Major issue, significant impact', color: 'border-orange-300 bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400' },
   { value: 'CRITICAL', label: 'Critical', description: 'System down, all users affected', color: 'border-red-300 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400' },
 ];
@@ -29,6 +29,7 @@ export default function NewIncidentPage() {
     description: '',
     severity: 'MEDIUM',
     isPublic: false,
+    serviceId: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -51,7 +52,11 @@ export default function NewIncidentPage() {
     setLoading(true);
 
     try {
-      const incident = await api.createIncident(formData);
+      const payload = {
+        ...formData,
+        serviceId: formData.serviceId || undefined,
+      };
+      const incident = await api.createIncident(payload);
       toast.success('Incident created successfully');
       router.push(`/incidents/${incident.id}`);
     } catch (error) {
@@ -65,13 +70,13 @@ export default function NewIncidentPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
       <Navbar />
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        <Link href="/incidents" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground mb-6 transition-colors">
+      <div className="max-w-3xl mx-auto px-4 py-8 page-enter">
+        <Link href="/incidents" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground mb-6 transition-colors animate-fade-in">
           <ArrowLeft className="h-4 w-4" />
           Back to Incidents
         </Link>
 
-        <div className="mb-8">
+        <div className="mb-8 animate-fade-in-up">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent flex items-center gap-3">
             <AlertTriangle className="h-9 w-9 text-orange-500" />
             Report Incident
@@ -79,7 +84,7 @@ export default function NewIncidentPage() {
           <p className="text-muted-foreground mt-2">Create a new incident report to track and resolve issues</p>
         </div>
 
-        <Card className="shadow-xl border-0 dark:border">
+        <Card className="shadow-xl border-0 dark:border animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           <CardContent className="pt-8">
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Title */}
@@ -107,9 +112,27 @@ export default function NewIncidentPage() {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   required
-                  className="w-full min-h-[140px] px-4 py-3 border rounded-lg text-base bg-background resize-y focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="Describe the incident in detail: what happened, what's affected, and any initial observations..."
+                  className="w-full min-h-[140px] px-4 py-3 border rounded-xl text-base bg-background resize-y focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+                  placeholder="Describe the incident in detail..."
                 />
+              </div>
+
+              {/* Service Selector */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                  <Server className="h-4 w-4" />
+                  Affected Service
+                </Label>
+                <select
+                  className="w-full border rounded-xl p-3 bg-background text-base cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+                  value={formData.serviceId}
+                  onChange={(e) => setFormData({ ...formData, serviceId: e.target.value })}
+                >
+                  <option value="">No specific service</option>
+                  {services.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Severity */}
@@ -124,9 +147,9 @@ export default function NewIncidentPage() {
                       type="button"
                       onClick={() => setFormData({ ...formData, severity: opt.value })}
                       className={cn(
-                        'p-4 rounded-xl border-2 text-left transition-all',
+                        'p-4 rounded-xl border-2 text-left transition-all duration-300 hover:scale-[1.02]',
                         formData.severity === opt.value
-                          ? `${opt.color} ring-2 ring-offset-2 ring-current shadow-sm`
+                          ? `${opt.color} ring-2 ring-offset-2 ring-current shadow-md`
                           : 'border-muted hover:border-foreground/20'
                       )}
                     >
@@ -145,9 +168,9 @@ export default function NewIncidentPage() {
                     type="button"
                     onClick={() => setFormData({ ...formData, isPublic: false })}
                     className={cn(
-                      'flex-1 flex items-center gap-3 p-4 rounded-xl border-2 transition-all',
+                      'flex-1 flex items-center gap-3 p-4 rounded-xl border-2 transition-all duration-300 hover:scale-[1.01]',
                       !formData.isPublic
-                        ? 'border-foreground/30 bg-muted/50 ring-2 ring-offset-2 ring-foreground/20'
+                        ? 'border-foreground/30 bg-muted/50 ring-2 ring-offset-2 ring-foreground/20 shadow-md'
                         : 'border-muted hover:border-foreground/20'
                     )}
                   >
@@ -161,13 +184,13 @@ export default function NewIncidentPage() {
                     type="button"
                     onClick={() => setFormData({ ...formData, isPublic: true })}
                     className={cn(
-                      'flex-1 flex items-center gap-3 p-4 rounded-xl border-2 transition-all',
+                      'flex-1 flex items-center gap-3 p-4 rounded-xl border-2 transition-all duration-300 hover:scale-[1.01]',
                       formData.isPublic
-                        ? 'border-purple-300 bg-purple-50 dark:bg-purple-950/30 ring-2 ring-offset-2 ring-purple-400/50'
+                        ? 'border-violet-300 bg-violet-50 dark:bg-violet-950/30 ring-2 ring-offset-2 ring-violet-400/50 shadow-md'
                         : 'border-muted hover:border-foreground/20'
                     )}
                   >
-                    <Eye className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    <Eye className="h-5 w-5 text-violet-600 dark:text-violet-400" />
                     <div className="text-left">
                       <div className="font-semibold text-sm">Public</div>
                       <div className="text-xs text-muted-foreground">Visible on the status page</div>
@@ -178,7 +201,7 @@ export default function NewIncidentPage() {
 
               {/* Actions */}
               <div className="flex gap-3 pt-4 border-t">
-                <Button type="submit" disabled={loading} className="gap-2 h-11 px-6">
+                <Button type="submit" disabled={loading} className="gap-2 h-11 px-6 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all">
                   {loading ? (
                     <>
                       <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
