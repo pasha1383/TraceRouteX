@@ -11,6 +11,8 @@ import serviceRoutes from './routes/serviceRoutes';
 import incidentRoutes from './routes/incidentRoutes';
 import updateRoutes from './routes/updateRoutes';
 import auditLogRoutes from './routes/auditLogRoutes';
+import userRoutes from './routes/userRoutes';
+import publicRoutes from './routes/publicRoutes';
 
 dotenv.config();
 
@@ -28,6 +30,8 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/incidents', incidentRoutes);
 app.use('/api/updates', updateRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
+app.use('/api/users', userRoutes);
+app.use('/public', publicRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

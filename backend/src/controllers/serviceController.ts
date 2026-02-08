@@ -20,7 +20,7 @@ export const getAllServices = async (req: AuthRequest, res: Response): Promise<v
 
 export const getServiceById = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const serviceRepository = AppDataSource.getRepository(Service);
     const service = await serviceRepository.findOne({ where: { id } });
 
@@ -65,7 +65,7 @@ export const createService = async (req: AuthRequest, res: Response): Promise<vo
 
 export const updateService = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { name, description, status } = req.body;
 
     const serviceRepository = AppDataSource.getRepository(Service);
@@ -91,9 +91,39 @@ export const updateService = async (req: AuthRequest, res: Response): Promise<vo
   }
 };
 
+export const updateServiceStatus = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const { status } = req.body;
+
+    if (!status) {
+      res.status(400).json({ error: 'Status is required' });
+      return;
+    }
+
+    const serviceRepository = AppDataSource.getRepository(Service);
+    const service = await serviceRepository.findOne({ where: { id } });
+
+    if (!service) {
+      res.status(404).json({ error: 'Service not found' });
+      return;
+    }
+
+    service.status = status;
+    await serviceRepository.save(service);
+    
+    await logAudit(req.user?.userId || null, 'SERVICE_STATUS_UPDATED', 'Service', service.id, { status });
+
+    res.json(service);
+  } catch (error) {
+    console.error('Update service status error:', error);
+    res.status(500).json({ error: 'Failed to update service status' });
+  }
+};
+
 export const deleteService = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const serviceRepository = AppDataSource.getRepository(Service);
     const service = await serviceRepository.findOne({ where: { id } });

@@ -28,7 +28,7 @@ export const getAllIncidents = async (req: AuthRequest, res: Response): Promise<
 
 export const getIncidentById = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const incidentRepository = AppDataSource.getRepository(Incident);
     
     const incident = await incidentRepository.findOne({
@@ -85,7 +85,7 @@ export const createIncident = async (req: AuthRequest, res: Response): Promise<v
 
 export const updateIncident = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { title, description, severity, status, isPublic } = req.body;
 
     const incidentRepository = AppDataSource.getRepository(Incident);
@@ -120,9 +120,122 @@ export const updateIncident = async (req: AuthRequest, res: Response): Promise<v
   }
 };
 
+export const resolveIncident = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+
+    const incidentRepository = AppDataSource.getRepository(Incident);
+    const incident = await incidentRepository.findOne({ where: { id } });
+
+    if (!incident) {
+      res.status(404).json({ error: 'Incident not found' });
+      return;
+    }
+
+    incident.status = IncidentStatus.RESOLVED;
+    incident.resolvedAt = new Date();
+
+    await incidentRepository.save(incident);
+    
+    await logAudit(req.user?.userId || null, 'INCIDENT_RESOLVED', 'Incident', incident.id, { title: incident.title });
+
+    res.json(incident);
+  } catch (error) {
+    console.error('Resolve incident error:', error);
+    res.status(500).json({ error: 'Failed to resolve incident' });
+  }
+};
+
+export const publishIncident = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const { isPublic } = req.body;
+
+    const incidentRepository = AppDataSource.getRepository(Incident);
+    const incident = await incidentRepository.findOne({ where: { id } });
+
+    if (!incident) {
+      res.status(404).json({ error: 'Incident not found' });
+      return;
+    }
+
+    incident.isPublic = isPublic !== undefined ? isPublic : !incident.isPublic;
+
+    await incidentRepository.save(incident);
+    
+    await logAudit(req.user?.userId || null, 'INCIDENT_PUBLISH_TOGGLED', 'Incident', incident.id, { isPublic: incident.isPublic });
+
+    res.json(incident);
+  } catch (error) {
+    console.error('Publish incident error:', error);
+    res.status(500).json({ error: 'Failed to publish incident' });
+  }
+};
+
+export const addIncidentUpdate = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const { content } = req.body;
+
+    if (!content) {
+      res.status(400).json({ error: 'Content is required' });
+      return;
+    }
+
+    const incidentRepository = AppDataSource.getRepository(Incident);
+    const incident = await incidentRepository.findOne({ where: { id } });
+
+    if (!incident) {
+      res.status(404).json({ error: 'Incident not found' });
+      return;
+    }
+
+    const { Update } = await import('../entities/Update');
+    const updateRepository = AppDataSource.getRepository(Update);
+    const update = updateRepository.create({
+      content,
+      incidentId: id,
+      userId: req.user?.userId
+    });
+
+    await updateRepository.save(update);
+    
+    const savedUpdate = await updateRepository.findOne({
+      where: { id: update.id },
+      relations: ['user']
+    });
+    
+    await logAudit(req.user?.userId || null, 'INCIDENT_UPDATE_ADDED', 'Incident', id, { updateId: update.id });
+
+    res.status(201).json(savedUpdate);
+  } catch (error) {
+    console.error('Add incident update error:', error);
+    res.status(500).json({ error: 'Failed to add incident update' });
+  }
+};
+
+export const getIncidentUpdates = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+
+    const { Update } = await import('../entities/Update');
+    const updateRepository = AppDataSource.getRepository(Update);
+    const updates = await updateRepository.find({
+      where: { incidentId: id },
+      relations: ['user'],
+      order: { createdAt: 'ASC' }
+    });
+
+    res.json(updates);
+  } catch (error) {
+    console.error('Get incident updates error:', error);
+    res.status(500).json({ error: 'Failed to get incident updates' });
+  }
+};
+
 export const deleteIncident = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const incidentRepository = AppDataSource.getRepository(Incident);
     const incident = await incidentRepository.findOne({ where: { id } });

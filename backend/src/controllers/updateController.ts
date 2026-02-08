@@ -7,7 +7,7 @@ import { logAudit } from '../utils/auditLogger';
 
 export const getUpdatesByIncident = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { incidentId } = req.params;
+    const incidentId = req.params.incidentId as string;
     
     const updateRepository = AppDataSource.getRepository(Update);
     const updates = await updateRepository.find({
@@ -67,7 +67,7 @@ export const createUpdate = async (req: AuthRequest, res: Response): Promise<voi
 
 export const deleteUpdate = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const updateRepository = AppDataSource.getRepository(Update);
     const update = await updateRepository.findOne({ where: { id } });

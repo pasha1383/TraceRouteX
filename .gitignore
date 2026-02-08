@@ -38,3 +38,4 @@
 /frontend/*.tsbuildinfo
 /frontend/next-env.d.ts
 /frontend/package-lock.json
+/backend/dist/
