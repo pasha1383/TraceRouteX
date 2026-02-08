@@ -14,12 +14,6 @@ export const seedDatabase = async () => {
     const incidentRepository = AppDataSource.getRepository(Incident);
     const updateRepository = AppDataSource.getRepository(Update);
 
-    // Clear existing data (optional - comment out if you want to keep existing data)
-    // await updateRepository.delete({});
-    // await incidentRepository.delete({});
-    // await serviceRepository.delete({});
-    // await userRepository.delete({});
-
     // Create Users
     console.log('👤 Creating users...');
     const adminPassword = await hashPassword('admin123');
@@ -27,28 +21,28 @@ export const seedDatabase = async () => {
     const viewerPassword = await hashPassword('viewer123');
 
     const admin = userRepository.create({
-      email: 'admin@traceroutex.com',
+      email: 'admin@example.com',
       password: adminPassword,
       role: UserRole.ADMIN
     });
     await userRepository.save(admin);
 
     const engineer1 = userRepository.create({
-      email: 'engineer1@traceroutex.com',
+      email: 'engineer@example.com',
       password: engineerPassword,
       role: UserRole.ENGINEER
     });
     await userRepository.save(engineer1);
 
     const engineer2 = userRepository.create({
-      email: 'engineer2@traceroutex.com',
+      email: 'engineer2@example.com',
       password: engineerPassword,
       role: UserRole.ENGINEER
     });
     await userRepository.save(engineer2);
 
     const viewer = userRepository.create({
-      email: 'viewer@traceroutex.com',
+      email: 'viewer@example.com',
       password: viewerPassword,
       role: UserRole.VIEWER
     });
@@ -62,17 +56,17 @@ export const seedDatabase = async () => {
       {
         name: 'API Gateway',
         description: 'Main API gateway handling all incoming requests',
-        status: ServiceStatus.OPERATIONAL
+        status: ServiceStatus.UP
       },
       {
         name: 'Authentication Service',
         description: 'User authentication and authorization service',
-        status: ServiceStatus.OPERATIONAL
+        status: ServiceStatus.UP
       },
       {
         name: 'Database Cluster',
         description: 'PostgreSQL database cluster for data persistence',
-        status: ServiceStatus.OPERATIONAL
+        status: ServiceStatus.UP
       },
       {
         name: 'CDN Network',
@@ -82,21 +76,21 @@ export const seedDatabase = async () => {
       {
         name: 'Email Service',
         description: 'Email notification and delivery service',
-        status: ServiceStatus.OPERATIONAL
+        status: ServiceStatus.UP
       },
       {
         name: 'Payment Gateway',
         description: 'Payment processing and transaction management',
-        status: ServiceStatus.OPERATIONAL
+        status: ServiceStatus.UP
       },
       {
         name: 'Analytics Engine',
         description: 'Real-time analytics and data processing',
-        status: ServiceStatus.MAINTENANCE
+        status: ServiceStatus.DOWN
       }
     ];
 
-    const createdServices = [];
+    const createdServices: Service[] = [];
     for (const serviceData of services) {
       const service = serviceRepository.create(serviceData);
       await serviceRepository.save(service);
@@ -112,22 +106,28 @@ export const seedDatabase = async () => {
         title: 'High CPU Usage on API Gateway',
         description: 'API Gateway servers experiencing unusually high CPU usage causing slow response times. Investigation ongoing.',
         severity: IncidentSeverity.HIGH,
-        status: IncidentStatus.INVESTIGATING,
-        isPublic: true
+        status: IncidentStatus.OPEN,
+        isPublic: true,
+        serviceId: createdServices[0].id,
+        createdById: engineer1.id
       },
       {
         title: 'CDN Performance Degradation',
         description: 'CDN edge nodes in EU region showing degraded performance. Users may experience slower load times.',
         severity: IncidentSeverity.MEDIUM,
-        status: IncidentStatus.INVESTIGATING,
-        isPublic: true
+        status: IncidentStatus.OPEN,
+        isPublic: true,
+        serviceId: createdServices[3].id,
+        createdById: engineer2.id
       },
       {
         title: 'Scheduled Database Maintenance',
         description: 'Planned maintenance window for database cluster upgrade. No impact expected.',
         severity: IncidentSeverity.LOW,
         status: IncidentStatus.OPEN,
-        isPublic: true
+        isPublic: true,
+        serviceId: createdServices[2].id,
+        createdById: admin.id
       },
       {
         title: 'Payment Gateway Intermittent Errors',
@@ -135,19 +135,25 @@ export const seedDatabase = async () => {
         severity: IncidentSeverity.CRITICAL,
         status: IncidentStatus.RESOLVED,
         isPublic: true,
-        resolvedAt: new Date(Date.now() - 2 * 60 * 60 * 1000) // 2 hours ago
+        serviceId: createdServices[5].id,
+        createdById: engineer1.id,
+        resolvedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        rootCauseSummary: 'API version mismatch between gateway and payment processor. Updated to latest API version.'
       },
       {
         title: 'Internal API Rate Limiting Issue',
         description: 'Internal issue with rate limiting configuration. Not affecting customers.',
         severity: IncidentSeverity.MEDIUM,
-        status: IncidentStatus.CLOSED,
+        status: IncidentStatus.RESOLVED,
         isPublic: false,
-        resolvedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) // 5 days ago
+        serviceId: createdServices[0].id,
+        createdById: engineer1.id,
+        resolvedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+        rootCauseSummary: 'Rate limiter configuration was too aggressive. Adjusted threshold values.'
       }
     ];
 
-    const createdIncidents = [];
+    const createdIncidents: Incident[] = [];
     for (const incidentData of incidents) {
       const incident = incidentRepository.create(incidentData);
       await incidentRepository.save(incident);
@@ -159,42 +165,39 @@ export const seedDatabase = async () => {
     // Create Updates for incidents
     console.log('📝 Creating incident updates...');
     const updates = [
-      // Updates for High CPU incident
       {
         content: 'Incident detected. DevOps team has been notified and is investigating.',
-        incident: createdIncidents[0],
+        incidentId: createdIncidents[0].id,
         userId: engineer1.id
       },
       {
         content: 'Root cause identified: Memory leak in session management. Deploying hotfix.',
-        incident: createdIncidents[0],
+        incidentId: createdIncidents[0].id,
         userId: engineer1.id
       },
-      // Updates for CDN incident
       {
         content: 'CDN provider notified. Monitoring the situation closely.',
-        incident: createdIncidents[1],
+        incidentId: createdIncidents[1].id,
         userId: engineer2.id
       },
       {
         content: 'CDN provider confirmed issue with EU-West nodes. They are working on a fix.',
-        incident: createdIncidents[1],
+        incidentId: createdIncidents[1].id,
         userId: engineer2.id
       },
-      // Updates for resolved payment gateway incident
       {
         content: 'Issue identified with payment gateway API version mismatch.',
-        incident: createdIncidents[3],
+        incidentId: createdIncidents[3].id,
         userId: engineer1.id
       },
       {
         content: 'Updated to latest API version. Testing in progress.',
-        incident: createdIncidents[3],
+        incidentId: createdIncidents[3].id,
         userId: engineer1.id
       },
       {
         content: 'Fix deployed successfully. All payment transactions working normally. Monitoring for 24 hours.',
-        incident: createdIncidents[3],
+        incidentId: createdIncidents[3].id,
         userId: engineer1.id
       }
     ];
@@ -202,7 +205,6 @@ export const seedDatabase = async () => {
     for (const updateData of updates) {
       const update = updateRepository.create(updateData);
       await updateRepository.save(update);
-      // Add small delay to ensure different timestamps
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
@@ -215,10 +217,10 @@ export const seedDatabase = async () => {
     console.log('  - Incidents: 5');
     console.log('  - Updates: 7\n');
     console.log('🔐 Test Credentials:');
-    console.log('  Admin:     admin@traceroutex.com / admin123');
-    console.log('  Engineer:  engineer1@traceroutex.com / engineer123');
-    console.log('  Engineer:  engineer2@traceroutex.com / engineer123');
-    console.log('  Viewer:    viewer@traceroutex.com / viewer123\n');
+    console.log('  Admin:     admin@example.com / admin123');
+    console.log('  Engineer:  engineer@example.com / engineer123');
+    console.log('  Engineer:  engineer2@example.com / engineer123');
+    console.log('  Viewer:    viewer@example.com / viewer123\n');
 
   } catch (error) {
     console.error('❌ Error seeding database:', error);
