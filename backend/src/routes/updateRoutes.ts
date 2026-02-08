@@ -5,7 +5,7 @@ import { UserRole } from '../entities/User';
 
 const router = Router();
 
-router.get('/incident/:incidentId', getUpdatesByIncident);
+router.get('/incident/:incidentId', authenticate, getUpdatesByIncident);
 router.post('/', authenticate, authorize(UserRole.ENGINEER, UserRole.ADMIN), createUpdate);
 router.delete('/:id', authenticate, deleteUpdate);
 

@@ -4,6 +4,8 @@ import { Service, ServiceStatus } from '../entities/Service';
 import { AuthRequest } from '../middleware/auth';
 import { logAudit } from '../utils/auditLogger';
 
+const validStatuses = Object.values(ServiceStatus);
+
 export const getAllServices = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const serviceRepository = AppDataSource.getRepository(Service);
@@ -22,7 +24,10 @@ export const getServiceById = async (req: AuthRequest, res: Response): Promise<v
   try {
     const id = req.params.id as string;
     const serviceRepository = AppDataSource.getRepository(Service);
-    const service = await serviceRepository.findOne({ where: { id } });
+    const service = await serviceRepository.findOne({
+      where: { id },
+      relations: ['incidents', 'incidents.createdBy']
+    });
 
     if (!service) {
       res.status(404).json({ error: 'Service not found' });
@@ -45,15 +50,20 @@ export const createService = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
+    if (status && !validStatuses.includes(status)) {
+      res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+      return;
+    }
+
     const serviceRepository = AppDataSource.getRepository(Service);
     const service = serviceRepository.create({
       name,
       description,
-      status: status || ServiceStatus.OPERATIONAL
+      status: status || ServiceStatus.UP
     });
 
     await serviceRepository.save(service);
-    
+
     await logAudit(req.user?.userId || null, 'SERVICE_CREATED', 'Service', service.id, { name });
 
     res.status(201).json(service);
@@ -68,6 +78,11 @@ export const updateService = async (req: AuthRequest, res: Response): Promise<vo
     const id = req.params.id as string;
     const { name, description, status } = req.body;
 
+    if (status && !validStatuses.includes(status)) {
+      res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+      return;
+    }
+
     const serviceRepository = AppDataSource.getRepository(Service);
     const service = await serviceRepository.findOne({ where: { id } });
 
@@ -81,7 +96,7 @@ export const updateService = async (req: AuthRequest, res: Response): Promise<vo
     if (status !== undefined) service.status = status;
 
     await serviceRepository.save(service);
-    
+
     await logAudit(req.user?.userId || null, 'SERVICE_UPDATED', 'Service', service.id, { name, status });
 
     res.json(service);
@@ -101,6 +116,11 @@ export const updateServiceStatus = async (req: AuthRequest, res: Response): Prom
       return;
     }
 
+    if (!validStatuses.includes(status)) {
+      res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+      return;
+    }
+
     const serviceRepository = AppDataSource.getRepository(Service);
     const service = await serviceRepository.findOne({ where: { id } });
 
@@ -109,10 +129,11 @@ export const updateServiceStatus = async (req: AuthRequest, res: Response): Prom
       return;
     }
 
+    const oldStatus = service.status;
     service.status = status;
     await serviceRepository.save(service);
-    
-    await logAudit(req.user?.userId || null, 'SERVICE_STATUS_UPDATED', 'Service', service.id, { status });
+
+    await logAudit(req.user?.userId || null, 'SERVICE_STATUS_UPDATED', 'Service', service.id, { oldStatus, newStatus: status });
 
     res.json(service);
   } catch (error) {
@@ -134,7 +155,7 @@ export const deleteService = async (req: AuthRequest, res: Response): Promise<vo
     }
 
     await serviceRepository.remove(service);
-    
+
     await logAudit(req.user?.userId || null, 'SERVICE_DELETED', 'Service', id, { name: service.name });
 
     res.json({ message: 'Service deleted successfully' });
