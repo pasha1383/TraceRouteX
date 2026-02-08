@@ -39,3 +39,5 @@
 /frontend/next-env.d.ts
 /frontend/package-lock.json
 /backend/dist/
+/node_modules/
+/package-lock.json
