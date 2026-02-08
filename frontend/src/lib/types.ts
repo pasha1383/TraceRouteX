@@ -5,10 +5,9 @@ export enum UserRole {
 }
 
 export enum ServiceStatus {
-  OPERATIONAL = 'OPERATIONAL',
+  UP = 'UP',
   DEGRADED = 'DEGRADED',
   DOWN = 'DOWN',
-  MAINTENANCE = 'MAINTENANCE',
 }
 
 export enum IncidentSeverity {
@@ -20,9 +19,7 @@ export enum IncidentSeverity {
 
 export enum IncidentStatus {
   OPEN = 'OPEN',
-  INVESTIGATING = 'INVESTIGATING',
   RESOLVED = 'RESOLVED',
-  CLOSED = 'CLOSED',
 }
 
 export interface User {
@@ -40,6 +37,7 @@ export interface Service {
   status: ServiceStatus;
   createdAt: string;
   updatedAt: string;
+  incidents?: Incident[];
 }
 
 export interface Incident {
@@ -49,9 +47,14 @@ export interface Incident {
   severity: IncidentSeverity;
   status: IncidentStatus;
   isPublic: boolean;
+  rootCauseSummary: string | null;
   resolvedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  serviceId: string | null;
+  createdById: string | null;
+  service?: Service | null;
+  createdBy?: User | null;
   updates?: Update[];
 }
 
@@ -70,6 +73,14 @@ export interface AuditLog {
   action: string;
   entityType: string;
   entityId: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   createdAt: string;
+}
+
+export interface IncidentFilters {
+  severity?: IncidentSeverity;
+  status?: IncidentStatus;
+  serviceId?: string;
+  startDate?: string;
+  endDate?: string;
 }

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { IncidentFilters } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -57,14 +58,15 @@ export const servicesAPI = {
 
 // Incidents API
 export const incidentsAPI = {
-  getAll: () => apiInstance.get('/incidents'),
+  getAll: (filters?: IncidentFilters) =>
+    apiInstance.get('/incidents', { params: filters }),
   getById: (id: string) => apiInstance.get(`/incidents/${id}`),
   create: (data: {
     title: string;
     description: string;
     severity?: string;
-    status?: string;
     isPublic?: boolean;
+    serviceId?: string;
   }) => apiInstance.post('/incidents', data),
   update: (
     id: string,
@@ -72,44 +74,55 @@ export const incidentsAPI = {
       title: string;
       description: string;
       severity: string;
-      status: string;
       isPublic: boolean;
+      serviceId: string;
     }>
   ) => apiInstance.patch(`/incidents/${id}`, data),
-  resolve: (id: string) => apiInstance.patch(`/incidents/${id}/resolve`),
-  publish: (id: string, isPublic: boolean) => apiInstance.patch(`/incidents/${id}/publish`, { isPublic }),
-  addUpdate: (id: string, content: string) => apiInstance.post(`/incidents/${id}/updates`, { content }),
+  resolve: (id: string, rootCauseSummary?: string) =>
+    apiInstance.patch(`/incidents/${id}/resolve`, { rootCauseSummary }),
+  publish: (id: string, isPublic: boolean) =>
+    apiInstance.patch(`/incidents/${id}/publish`, { isPublic }),
+  addUpdate: (id: string, content: string) =>
+    apiInstance.post(`/incidents/${id}/updates`, { content }),
   getUpdates: (id: string) => apiInstance.get(`/incidents/${id}/updates`),
   delete: (id: string) => apiInstance.delete(`/incidents/${id}`),
 };
 
 // Updates API
 export const updatesAPI = {
-  getByIncident: (incidentId: string) => apiInstance.get(`/updates/incident/${incidentId}`),
-  create: (data: { incidentId: string; content: string }) => apiInstance.post('/updates', data),
+  getByIncident: (incidentId: string) =>
+    apiInstance.get(`/updates/incident/${incidentId}`),
+  create: (data: { incidentId: string; content: string }) =>
+    apiInstance.post('/updates', data),
   delete: (id: string) => apiInstance.delete(`/updates/${id}`),
 };
 
 // Users API
 export const usersAPI = {
   getAll: () => apiInstance.get('/users'),
-  updateRole: (id: string, role: string) => apiInstance.patch(`/users/${id}/role`, { role }),
+  updateRole: (id: string, role: string) =>
+    apiInstance.patch(`/users/${id}/role`, { role }),
   delete: (id: string) => apiInstance.delete(`/users/${id}`),
 };
 
 // Public API (no auth required)
 export const publicAPI = {
-  getServices: () => axios.get(`${API_BASE_URL.replace('/api', '')}/public/services`),
-  getIncidents: () => axios.get(`${API_BASE_URL.replace('/api', '')}/public/incidents`),
+  getServices: () =>
+    axios.get(`${API_BASE_URL.replace('/api', '')}/public/services`),
+  getIncidents: () =>
+    axios.get(`${API_BASE_URL.replace('/api', '')}/public/incidents`),
 };
 
 // Audit Logs API
 export const auditLogsAPI = {
-  getAll: (params?: { entityType?: string; entityId?: string; limit?: number }) =>
-    apiInstance.get('/audit-logs', { params }),
+  getAll: (params?: {
+    entityType?: string;
+    entityId?: string;
+    limit?: number;
+  }) => apiInstance.get('/audit-logs', { params }),
 };
 
-// Export a unified API object with simpler method names
+// Export a unified API object
 export default {
   // Auth
   login: async (email: string, password: string) => {
@@ -134,11 +147,18 @@ export default {
     const res = await servicesAPI.getById(id);
     return res.data;
   },
-  createService: async (data: { name: string; description?: string; status?: string }) => {
+  createService: async (data: {
+    name: string;
+    description?: string;
+    status?: string;
+  }) => {
     const res = await servicesAPI.create(data);
     return res.data;
   },
-  updateService: async (id: string, data: Partial<{ name: string; description: string; status: string }>) => {
+  updateService: async (
+    id: string,
+    data: Partial<{ name: string; description: string; status: string }>
+  ) => {
     const res = await servicesAPI.update(id, data);
     return res.data;
   },
@@ -152,24 +172,39 @@ export default {
   },
 
   // Incidents
-  getIncidents: async () => {
-    const res = await incidentsAPI.getAll();
+  getIncidents: async (filters?: IncidentFilters) => {
+    const res = await incidentsAPI.getAll(filters);
     return res.data;
   },
   getIncidentById: async (id: string) => {
     const res = await incidentsAPI.getById(id);
     return res.data;
   },
-  createIncident: async (data: any) => {
+  createIncident: async (data: {
+    title: string;
+    description: string;
+    severity?: string;
+    isPublic?: boolean;
+    serviceId?: string;
+  }) => {
     const res = await incidentsAPI.create(data);
     return res.data;
   },
-  updateIncident: async (id: string, data: any) => {
+  updateIncident: async (
+    id: string,
+    data: Partial<{
+      title: string;
+      description: string;
+      severity: string;
+      isPublic: boolean;
+      serviceId: string;
+    }>
+  ) => {
     const res = await incidentsAPI.update(id, data);
     return res.data;
   },
-  resolveIncident: async (id: string) => {
-    const res = await incidentsAPI.resolve(id);
+  resolveIncident: async (id: string, rootCauseSummary?: string) => {
+    const res = await incidentsAPI.resolve(id, rootCauseSummary);
     return res.data;
   },
   publishIncident: async (id: string, isPublic: boolean) => {
@@ -228,7 +263,11 @@ export default {
   },
 
   // Audit Logs
-  getAuditLogs: async (params?: { entityType?: string; entityId?: string; limit?: number }) => {
+  getAuditLogs: async (params?: {
+    entityType?: string;
+    entityId?: string;
+    limit?: number;
+  }) => {
     const res = await auditLogsAPI.getAll(params);
     return res.data;
   },
