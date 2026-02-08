@@ -1,5 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { Update } from './Update';
+import { Service } from './Service';
+import { User } from './User';
 
 export enum IncidentSeverity {
   LOW = 'LOW',
@@ -10,9 +12,7 @@ export enum IncidentSeverity {
 
 export enum IncidentStatus {
   OPEN = 'OPEN',
-  INVESTIGATING = 'INVESTIGATING',
-  RESOLVED = 'RESOLVED',
-  CLOSED = 'CLOSED'
+  RESOLVED = 'RESOLVED'
 }
 
 @Entity('incidents')
@@ -43,6 +43,9 @@ export class Incident {
   @Column({ default: false })
   isPublic!: boolean;
 
+  @Column({ type: 'text', nullable: true })
+  rootCauseSummary!: string | null;
+
   @Column({ type: 'timestamp', nullable: true })
   resolvedAt!: Date | null;
 
@@ -51,6 +54,20 @@ export class Incident {
 
   @UpdateDateColumn()
   updatedAt!: Date;
+
+  @ManyToOne(() => Service, service => service.incidents, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'serviceId' })
+  service!: Service | null;
+
+  @Column({ nullable: true })
+  serviceId!: string | null;
+
+  @ManyToOne(() => User, user => user.incidents, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'createdById' })
+  createdBy!: User | null;
+
+  @Column({ nullable: true })
+  createdById!: string | null;
 
   @OneToMany(() => Update, update => update.incident)
   updates!: Update[];

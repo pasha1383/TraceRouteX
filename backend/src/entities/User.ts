@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { Update } from './Update';
+import { Incident } from './Incident';
 
 export enum UserRole {
   VIEWER = 'VIEWER',
@@ -33,4 +34,7 @@ export class User {
 
   @OneToMany(() => Update, update => update.user)
   updates!: Update[];
+
+  @OneToMany(() => Incident, incident => incident.createdBy)
+  incidents!: Incident[];
 }

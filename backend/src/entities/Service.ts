@@ -1,10 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Incident } from './Incident';
 
 export enum ServiceStatus {
-  OPERATIONAL = 'OPERATIONAL',
+  UP = 'UP',
   DEGRADED = 'DEGRADED',
-  DOWN = 'DOWN',
-  MAINTENANCE = 'MAINTENANCE'
+  DOWN = 'DOWN'
 }
 
 @Entity('services')
@@ -21,7 +21,7 @@ export class Service {
   @Column({
     type: 'enum',
     enum: ServiceStatus,
-    default: ServiceStatus.OPERATIONAL
+    default: ServiceStatus.UP
   })
   status!: ServiceStatus;
 
@@ -30,4 +30,7 @@ export class Service {
 
   @UpdateDateColumn()
   updatedAt!: Date;
+
+  @OneToMany(() => Incident, incident => incident.service)
+  incidents!: Incident[];
 }
